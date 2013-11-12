@@ -1,6 +1,6 @@
 -module(ibrowse_socks5).
 
--include_lib("kernel/src/inet_dns.hrl").
+-include("inet_dns.hrl").
 
 -export([connect/3]).
 
