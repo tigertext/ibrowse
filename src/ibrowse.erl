@@ -6,7 +6,7 @@
 %%% Created : 11 Oct 2003 by Chandrashekhar Mullaparthi <chandrashekhar.mullaparthi@t-mobile.co.uk>
 %%%-------------------------------------------------------------------
 %% @author Chandrashekhar Mullaparthi <chandrashekhar dot mullaparthi at gmail dot com>
-%% @copyright 2005-2012 Chandrashekhar Mullaparthi
+%% @copyright 2005-2014 Chandrashekhar Mullaparthi
 %% @doc The ibrowse application implements an HTTP 1.1 client in erlang. This
 %% module implements the API of the HTTP client. There is one named
 %% process called 'ibrowse' which assists in load balancing and maintaining configuration. There is one load balancing process per unique webserver. There is
@@ -150,7 +150,7 @@ stop() ->
 %% The Status return value indicates the HTTP status code returned by the webserver
 %% @spec send_req(Url::string(), Headers::headerList(), Method::method()) -> response()
 %% headerList() = [{header(), value()}]
-%% header() = atom() | string()
+%% header() = atom() | string() | binary()
 %% value() = term()
 %% method() = get | post | head | options | put | delete | trace | mkcol | propfind | proppatch | lock | unlock | move | copy
 %% Status = string()
@@ -158,7 +158,7 @@ stop() ->
 %% respHeader() = {headerName(), headerValue()}
 %% headerName() = string()
 %% headerValue() = string()
-%% response() = {ok, Status, ResponseHeaders, ResponseBody} | {ibrowse_req_id, req_id() } | {error, Reason}
+%% response() = {ok, Status, ResponseHeaders, ResponseBody} | {ok, Status, ResponseHeaders, ResponseBody} | {ibrowse_req_id, req_id() } | {error, Reason}
 %% req_id() = term()
 %% ResponseBody = string() | {file, Filename}
 %% Reason = term()
@@ -256,6 +256,8 @@ send_req(Url, Headers, Method, Body) ->
 %% to receive the raw data stream when the Transfer-Encoding of the server
 %% response is Chunked.
 %% </li>
+%% <li> The <code>return_raw_request</code> option enables the caller to get the exact request which was sent by ibrowse to the server, along with the response. When this option is used, the response for synchronous requests is a 5-tuple instead of the usual 4-tuple. For asynchronous requests, the calling process gets a message <code>{ibrowse_async_raw_req, Raw_req}</code>. 
+%% </li>
 %% </ul>
 %%
 %% @spec send_req(Url::string(), Headers::headerList(), Method::method(), Body::body(), Options::optionList()) -> response()
@@ -289,7 +291,8 @@ send_req(Url, Headers, Method, Body) ->
 %%          {give_raw_headers, boolean()}      |
 %%          {preserve_chunked_encoding,boolean()}     |
 %%          {workaround, head_response_with_body}     |
-%%          {worker_process_options, list()}
+%%          {worker_process_options, list()} |
+%%          {return_raw_request, true}
 %%
 %% stream_to() = process() | {process(), once}
 %% process() = pid() | atom()
@@ -442,7 +445,7 @@ do_send_req(Conn_Pid, Parsed_url, Headers, Method, Body, Options, Timeout) ->
         {'EXIT', {noproc, {gen_server, call, [Conn_Pid, _, _]}}} ->
             {error, sel_conn_closed};
         {'EXIT', {normal, _}} ->
-            {error, req_timedout};
+            {error, sel_conn_closed};
         {'EXIT', {connection_closed, _}} ->
             {error, sel_conn_closed};
         {error, connection_closed} ->
@@ -453,6 +456,13 @@ do_send_req(Conn_Pid, Parsed_url, Headers, Method, Body, Options, Timeout) ->
             case get_value(response_format, Options, list) of
                 list ->
                     {ok, St_code, Headers, binary_to_list(Body)};
+                binary ->
+                    Ret
+            end;
+        {ok, St_code, Headers, Body, Req} = Ret when is_binary(Body) ->
+            case get_value(response_format, Options, list) of
+                list ->
+                    {ok, St_code, Headers, binary_to_list(Body), Req};
                 binary ->
                     Ret
             end;
