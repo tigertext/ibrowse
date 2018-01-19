@@ -19,3 +19,9 @@
 -record(ibrowse_conf, {key, value}).
 
 -endif.
+
+-ifdef(deprecated_now).
+-define(NOW, timestamp).
+-else.
+-define(NOW, now).
+-endif.

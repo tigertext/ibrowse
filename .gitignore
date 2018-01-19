@@ -11,3 +11,4 @@ Emakefile
 .dialyzer_plt
 .idea/
 *.iml
+.rebar

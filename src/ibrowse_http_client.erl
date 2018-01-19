@@ -433,7 +433,7 @@ accumulate_response(Data, #state{reply_buffer      = RepBuf,
 
 make_tmp_filename(true) ->
     DownloadDir = ibrowse:get_config_value(download_dir, filename:absname("./")),
-    {A,B,C} = erlang:timestamp(),
+    {A,B,C} = erlang:?NOW(),
     filename:join([DownloadDir,
                    "ibrowse_tmp_file_"++
                    integer_to_list(A) ++
@@ -1918,7 +1918,7 @@ cancel_timer(Ref, {eat_message, Msg}) ->
     end.
 
 make_req_id() ->
-    erlang:timestamp().
+    erlang:?NOW().
 
 to_lower(Str) when is_binary(Str) ->
     to_lower(binary_to_list(Str));
