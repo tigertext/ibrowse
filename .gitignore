@@ -9,3 +9,6 @@ doc/edoc-info
 Emakefile
 *.bat
 .dialyzer_plt
+.idea/
+*.iml
+.rebar
